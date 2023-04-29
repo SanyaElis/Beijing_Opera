@@ -24,7 +24,7 @@ class Tetris(QMainWindow):
 
         self.resize(300, 400)
         self.center()
-        self.setWindowTitle('Tetris')
+        self.setWindowTitle('Beijing Opera')
         self.show()
 
     def center(self):
@@ -73,9 +73,9 @@ class Board(QFrame):
     def start(self):
 
         self.isStarted = True
-        self.score = 0
         self.randomBoard()
-
+        self.fill_board()
+        self.score = 0
         self.msg2Statusbar.emit(str(self.score))
 
     def paintEvent(self, event):
@@ -95,7 +95,6 @@ class Board(QFrame):
                                     boardTop + i * self.squareHeight(), shape)
 
     def clearBoard(self):
-
         for i in range(Board.BoardHeight * Board.BoardWidth):
             self.board.append(Tetrominoe.NoShape)
 
@@ -104,13 +103,27 @@ class Board(QFrame):
             figure = random.randint(1, 7)
             self.board.append(figure)
 
+    def fill_spaces(self):
+        for i in range(Board.BoardWidth):
+            for j in range(Board.BoardHeight):
+                if self.shapeAt(i, j) == Tetrominoe.NoShape:
+                    self.setShapeAt(i, j, random.randint(1, 7))
+
+    def fill_board(self):
+        last_score = -1
+        print(self.score)
+        while (last_score != self.score):
+            last_score = self.score
+            self.check_board()
+            self.drop_cells()
+            self.fill_spaces()
+        self.msg2Statusbar.emit(str(self.score))
+
     def check_vertical(self, row):
-        for i in range(Board.BoardHeight - 2):
+        for i in range(Board.BoardHeight):
             j = i + 1
             number_of_same = 1
-            print(self.shapeAt(row, i))
-            print(self.shapeAt(row, j))
-            while j != Board.BoardHeight - 1 and self.shapeAt(row, i) == self.shapeAt(row, j):
+            while j != Board.BoardHeight and self.shapeAt(row, i) == self.shapeAt(row, j):
                 j += 1
                 number_of_same += 1
             if number_of_same >= 3 and self.shapeAt(row, i) != Tetrominoe.NoShape:
@@ -120,12 +133,10 @@ class Board(QFrame):
                     number_of_same -= 1
 
     def check_horizontal(self, col):
-        for i in range(Board.BoardWidth - 2):
+        for i in range(Board.BoardWidth):
             j = i + 1
             number_of_same = 1
-            print(self.shapeAt(i, col))
-            print(self.shapeAt(j, col))
-            while j != Board.BoardHeight - 1 and self.shapeAt(i, col) == self.shapeAt(j, col):
+            while j != Board.BoardHeight and self.shapeAt(i, col) == self.shapeAt(j, col):
                 j += 1
                 number_of_same += 1
             if number_of_same >= 3 and self.shapeAt(i, col) != Tetrominoe.NoShape:
@@ -133,6 +144,21 @@ class Board(QFrame):
                 while number_of_same > 0:
                     self.setShapeAt(i + number_of_same - 1, col, Tetrominoe.NoShape)
                     number_of_same -= 1
+
+    def drop_cells(self):
+        for i in range(Board.BoardWidth):
+            for j in range(1, Board.BoardHeight):
+                temp = j - 1
+                while temp != -1 and self.shapeAt(i, temp) == Tetrominoe.NoShape:
+                    self.setShapeAt(i, temp, self.shapeAt(i, temp + 1))
+                    self.setShapeAt(i, temp + 1, Tetrominoe.NoShape)
+                    temp -= 1
+
+    def check_board(self):
+        for i in range(Board.BoardWidth):
+            for j in range(Board.BoardHeight):
+                self.check_vertical(i)
+                self.check_horizontal(j)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -142,10 +168,11 @@ class Board(QFrame):
                 self.update()
         elif event.button() == Qt.RightButton:
             self.mouse_place_click(event.pos().x(), event.pos().y())
-            print(self.curX, self.curY)
-            print(self.shapeAt(self.curX, self.curY))
-            self.check_vertical(self.curX)
-            self.check_horizontal(self.curY)
+            # self.check_vertical(self.curX)
+            # self.check_horizontal(self.curY)
+            # self.check_board()
+            # self.drop_cells()
+            self.fill_board()
             self.update()
 
     def mouse_place_click(self, x, y):
