@@ -2,7 +2,7 @@ import random
 import sys
 import math
 
-from PyQt5.QtCore import Qt, QBasicTimer, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPainter, QColor
 from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication
 
@@ -23,7 +23,7 @@ class Beijing_opera(QMainWindow):
 
         self.tboard.start()
 
-        self.resize(800, 600)
+        self.resize(900, 900)
         self.center()
         self.setWindowTitle('Beijing Opera')
         self.show()
@@ -51,8 +51,8 @@ class Board(QFrame):
 
         self.curX = -1
         self.curY = -1
-        self.curPiece = Shape()
         self.score = 0
+        self.aim = 50
         self.board = []
 
         self.setFocusPolicy(Qt.StrongFocus)
@@ -77,7 +77,7 @@ class Board(QFrame):
         self.randomBoard()
         self.fill_board()
         self.score = 0
-        self.msg2Statusbar.emit(str(self.score))
+        self.msg2Statusbar.emit(str(self.score) + ' из ' + str(self.aim))
 
     def paintEvent(self, event):
 
@@ -90,14 +90,14 @@ class Board(QFrame):
             for j in range(Board.BoardWidth):
                 shape = self.shapeAt(j, Board.BoardHeight - i - 1)
 
-                if shape != Tetrominoe.NoShape:
+                if shape != VariantOfBlock.NoBlock:
                     self.drawSquare(painter,
                                     rect.left() + j * self.squareWidth(),
                                     boardTop + i * self.squareHeight(), shape)
 
     def clearBoard(self):
         for i in range(Board.BoardHeight * Board.BoardWidth):
-            self.board.append(Tetrominoe.NoShape)
+            self.board.append(VariantOfBlock.NoBlock)
 
     def randomBoard(self):
         for i in range(Board.BoardHeight * Board.BoardWidth):
@@ -107,7 +107,7 @@ class Board(QFrame):
     def fill_spaces(self):
         for i in range(Board.BoardWidth):
             for j in range(Board.BoardHeight):
-                if self.shapeAt(i, j) == Tetrominoe.NoShape:
+                if self.shapeAt(i, j) == VariantOfBlock.NoBlock:
                     self.setShapeAt(i, j, random.randint(1, 7))
 
     def fill_board(self):
@@ -117,7 +117,10 @@ class Board(QFrame):
             self.check_board()
             self.drop_cells()
             self.fill_spaces()
-        self.msg2Statusbar.emit(str(self.score))
+        if self.score <= self.aim:
+            self.msg2Statusbar.emit(str(self.score) + ' из ' + str(self.aim))
+        else:
+            self.msg2Statusbar.emit('Вы выиграли и набрали ' + str(self.score) + ' из ' + str(self.aim))
 
     def check_vertical(self, row):
         for i in range(Board.BoardHeight):
@@ -126,10 +129,10 @@ class Board(QFrame):
             while j != Board.BoardHeight and self.shapeAt(row, i) == self.shapeAt(row, j):
                 j += 1
                 number_of_same += 1
-            if number_of_same >= 3 and self.shapeAt(row, i) != Tetrominoe.NoShape:
+            if number_of_same >= 3 and self.shapeAt(row, i) != VariantOfBlock.NoBlock:
                 self.score += number_of_same
                 while number_of_same > 0:
-                    self.setShapeAt(row, i + number_of_same - 1, Tetrominoe.NoShape)
+                    self.setShapeAt(row, i + number_of_same - 1, VariantOfBlock.NoBlock)
                     number_of_same -= 1
 
     def check_horizontal(self, col):
@@ -139,19 +142,19 @@ class Board(QFrame):
             while j != Board.BoardHeight and self.shapeAt(i, col) == self.shapeAt(j, col):
                 j += 1
                 number_of_same += 1
-            if number_of_same >= 3 and self.shapeAt(i, col) != Tetrominoe.NoShape:
+            if number_of_same >= 3 and self.shapeAt(i, col) != VariantOfBlock.NoBlock:
                 self.score += number_of_same
                 while number_of_same > 0:
-                    self.setShapeAt(i + number_of_same - 1, col, Tetrominoe.NoShape)
+                    self.setShapeAt(i + number_of_same - 1, col, VariantOfBlock.NoBlock)
                     number_of_same -= 1
 
     def drop_cells(self):
         for i in range(Board.BoardWidth):
             for j in range(1, Board.BoardHeight):
                 temp = j - 1
-                while temp != -1 and self.shapeAt(i, temp) == Tetrominoe.NoShape:
+                while temp != -1 and self.shapeAt(i, temp) == VariantOfBlock.NoBlock:
                     self.setShapeAt(i, temp, self.shapeAt(i, temp + 1))
-                    self.setShapeAt(i, temp + 1, Tetrominoe.NoShape)
+                    self.setShapeAt(i, temp + 1, VariantOfBlock.NoBlock)
                     temp -= 1
 
     def check_board(self):
@@ -177,6 +180,8 @@ class Board(QFrame):
                     self.curY = y
                 self.update()
         elif event.button() == Qt.RightButton:
+            print(self.squareHeight())
+            print(self.squareWidth())
             self.curX = -1
             self.curY = -1
             self.update()
@@ -227,63 +232,15 @@ class Board(QFrame):
         painter.drawText(x + 10, y + 20, str(shape))
 
 
-class Tetrominoe(object):
-    NoShape = 0
-    ZShape = 1
-    SShape = 2
-    LineShape = 3
-    TShape = 4
-    SquareShape = 5
-    LShape = 6
-    MirroredLShape = 7
-
-
-class Shape(object):
-    coordsTable = (
-        ((0, 0), (0, 0), (0, 0), (0, 0)),
-        ((0, 0), (0, 0), (0, 0), (0, 0)),
-        ((0, 0), (0, 0), (0, 0), (0, 0)),
-        ((0, 0), (0, 0), (0, 0), (0, 0)),
-        ((0, 0), (0, 0), (0, 0), (0, 0)),
-        ((0, 0), (0, 0), (0, 0), (0, 0)),
-        ((0, 0), (0, 0), (0, 0), (0, 0)),
-        ((0, 0), (0, 0), (0, 0), (0, 0))
-    )
-
-    def __init__(self):
-
-        self.coords = [[0, 0] for i in range(4)]
-        self.pieceShape = Tetrominoe.NoShape
-
-        self.setShape(Tetrominoe.NoShape)
-
-    def shape(self):
-        return self.pieceShape
-
-    def setShape(self, shape):
-
-        table = Shape.coordsTable[shape]
-
-        for i in range(4):
-            for j in range(2):
-                self.coords[i][j] = table[i][j]
-
-        self.pieceShape = shape
-
-    def setRandomShape(self):
-        self.setShape(random.randint(1, 7))
-
-    def x(self, index):
-        return self.coords[index][0]
-
-    def y(self, index):
-        return self.coords[index][1]
-
-    def setX(self, index, x):
-        self.coords[index][0] = x
-
-    def setY(self, index, y):
-        self.coords[index][1] = y
+class VariantOfBlock(object):
+    NoBlock = 0
+    Block_1 = 1
+    Block_2 = 2
+    Block_3 = 3
+    Block_4 = 4
+    Block_5 = 5
+    Block_6 = 6
+    Block_7 = 7
 
 
 if __name__ == '__main__':
