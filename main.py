@@ -1,12 +1,13 @@
 import random
 import sys
+import math
 
 from PyQt5.QtCore import Qt, QBasicTimer, pyqtSignal
 from PyQt5.QtGui import QPainter, QColor
 from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication
 
 
-class Tetris(QMainWindow):
+class Beijing_opera(QMainWindow):
 
     def __init__(self):
         super().__init__()
@@ -22,7 +23,7 @@ class Tetris(QMainWindow):
 
         self.tboard.start()
 
-        self.resize(300, 400)
+        self.resize(800, 600)
         self.center()
         self.setWindowTitle('Beijing Opera')
         self.show()
@@ -48,8 +49,8 @@ class Board(QFrame):
 
     def initBoard(self):
 
-        self.curX = 0
-        self.curY = 4
+        self.curX = -1
+        self.curY = -1
         self.curPiece = Shape()
         self.score = 0
         self.board = []
@@ -111,7 +112,6 @@ class Board(QFrame):
 
     def fill_board(self):
         last_score = -1
-        print(self.score)
         while (last_score != self.score):
             last_score = self.score
             self.check_board()
@@ -163,23 +163,42 @@ class Board(QFrame):
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             if event.pos().x() < self.BoardWidth * self.squareWidth():
-                self.mouse_place_click(event.pos().x(), event.pos().y())
-                Board.setShapeAt(self, self.curX, self.curY, random.randint(1, 7))
+                x, y = self.mouse_place_click(event.pos().x(), event.pos().y())
+                # Board.setShapeAt(self, self.curX, self.curY, random.randint(1, 7))
+                if self.curX == -1 and self.curY == -1:
+                    self.curX = x
+                    self.curY = y
+                elif math.fabs(x - self.curX) + math.fabs(y - self.curY) == 1:
+                    if self.try_replace(x, y):
+                        self.curX = -1
+                        self.curY = -1
+                else:
+                    self.curX = x
+                    self.curY = y
                 self.update()
         elif event.button() == Qt.RightButton:
-            self.mouse_place_click(event.pos().x(), event.pos().y())
-            # self.check_vertical(self.curX)
-            # self.check_horizontal(self.curY)
-            # self.check_board()
-            # self.drop_cells()
-            self.fill_board()
+            self.curX = -1
+            self.curY = -1
             self.update()
+
+    def try_replace(self, x_to, y_to):
+        temp_score = self.score
+        temp_figure = self.shapeAt(x_to, y_to)
+        self.setShapeAt(x_to, y_to, self.shapeAt(self.curX, self.curY))
+        self.setShapeAt(self.curX, self.curY, temp_figure)
+        self.fill_board()
+        if temp_score == self.score:
+            self.setShapeAt(self.curX, self.curY, self.shapeAt(x_to, y_to))
+            self.setShapeAt(x_to, y_to, temp_figure)
+            return False
+        return True
 
     def mouse_place_click(self, x, y):
         c_x = x // self.squareWidth()
         c_y = (self.contentsRect().bottom() - y) // self.squareHeight()
-        self.curX = c_x
-        self.curY = c_y
+        return c_x, c_y
+        # self.curX = c_x
+        # self.curY = c_y
 
     def drawSquare(self, painter, x, y, shape):
 
@@ -269,5 +288,5 @@ class Shape(object):
 
 if __name__ == '__main__':
     app = QApplication([])
-    tetris = Tetris()
+    tetris = Beijing_opera()
     sys.exit(app.exec_())
