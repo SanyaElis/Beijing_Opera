@@ -4,7 +4,7 @@ import math
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPainter, QColor
-from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication
+from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, QLabel, QLineEdit
 
 
 class Beijing_opera(QMainWindow):
@@ -12,6 +12,8 @@ class Beijing_opera(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.field_width = None
+        self.field_height = None
         self.initUI()
 
     def initUI(self):
@@ -22,10 +24,19 @@ class Beijing_opera(QMainWindow):
         self.tboard.msg2Statusbar[str].connect(self.statusbar.showMessage)
 
         self.tboard.start()
-
         self.resize(900, 900)
+
+        self.field_width = QLineEdit(self)
+        self.field_width.resize(100, 50)
+        self.field_width.move(50, 0)
+
+        self.field_height = QLineEdit(self)
+        self.field_height.resize(100, 50)
+        self.field_height.move(300, 0)
+
         self.center()
         self.setWindowTitle('Beijing Opera')
+
         self.show()
 
     def center(self):
@@ -66,10 +77,10 @@ class Board(QFrame):
         self.board[(y * Board.BoardWidth) + x] = shape
 
     def squareWidth(self):
-        return self.contentsRect().width() // Board.BoardWidth
+        return (self.contentsRect().width() - 50) // Board.BoardWidth
 
     def squareHeight(self):
-        return self.contentsRect().height() // Board.BoardHeight
+        return (self.contentsRect().height() - 50) // Board.BoardHeight
 
     def start(self):
 
